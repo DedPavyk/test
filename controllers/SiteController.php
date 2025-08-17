@@ -5,6 +5,7 @@ namespace app\controllers;
 use Yii;
 use yii\web\Controller;
 use yii\web\Response;
+use yii\helpers\Json;
 use app\models\Contact;
 use app\models\Deal;
 
@@ -15,7 +16,9 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $type = Yii::$app->request->get('type', 'deal');
+        $id = Yii::$app->request->get('id');
+        return $this->render('index', ['type' => $type, 'id' => $id]);
     }
 
     /**
@@ -102,7 +105,13 @@ class SiteController extends Controller
             
             $contact->firstName = $data['firstName'];
             $contact->lastName = $data['lastName'] ?? '';
-            $contact->deals = $data['deals'] ?? [];
+
+            $deals = $data['deals'] ?? [];
+            if (is_string($deals)) {
+                $decodedDeals = Json::decode($deals);
+                $deals = is_array($decodedDeals) ? array_map('intval', $decodedDeals) : [];
+            }
+            $contact->deals = $deals;
             
             if ($contact->save()) {
                 return ['success' => true, 'id' => $contact->id];
@@ -117,7 +126,13 @@ class SiteController extends Controller
             
             $deal->name = $data['name'];
             $deal->amount = intval($data['amount'] ?? 0);
-            $deal->contacts = $data['contacts'] ?? [];
+
+            $contacts = $data['contacts'] ?? [];
+            if (is_string($contacts)) {
+                $decodedContacts = Json::decode($contacts);
+                $contacts = is_array($decodedContacts) ? array_map('intval', $decodedContacts) : [];
+            }
+            $deal->contacts = $contacts;
             
             if ($deal->save()) {
                 return ['success' => true, 'id' => $deal->id];
